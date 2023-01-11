@@ -1,0 +1,91 @@
+version: "3.9"
+services:
+  nginx:
+    depends_on:
+      - wordpress 
+    build: ./nginx
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      COMPOSE_PROJECT_NAME: "${COMPOSE_PROJECT_NAME}"
+      DOMAIN: "${DOMAIN}"
+    env_file: "./config.env"
+    volumes:
+      - wordpress_data:/var/www/html
+      - nginx_ssl:/etc/nginx/ssl
+      - "wpsite_certbot:/var/www/certbot/${DOMAIN}"
+    restart: unless-stopped 
+    networks: 
+      - app-network
+  certbot:
+    depends_on:
+      - nginx
+    build: ./certbot
+    container_name: certbot
+    env_file: "./config.env"
+    volumes:
+      - "wpsite_certbot:/var/www/certbot/${DOMAIN}"
+      - wordpress_data:/var/www/html
+    networks:
+      - app-network
+
+  cron:
+    build: ./cron
+    #image: cron
+    environment:
+      COMPOSE_PROJECT_NAME: "${COMPOSE_PROJECT_NAME}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/workdir:ro
+    depends_on:
+      - nginx
+      - certbot
+
+  db:
+    env_file: 
+      - ./config.env
+    container_name: db
+    image: mariadb:10.4
+    volumes:
+      - db_data:/var/lib/mysql
+    command: '--default-authentication-plugin=mysql_native_password'
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}" 
+      MYSQL_DATABASE: "${MYSQL_DATABASE}"
+      MYSQL_USER: "${MYSQL_USER}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+    networks:
+      - app-network
+
+  wordpress:
+    depends_on:
+      - db
+    env_file:
+      - config.env
+    build: ./customization
+    container_name: wordpress
+    volumes:
+      - wordpress_data:/var/www/html
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: "${MYSQL_USER}"
+      WORDPRESS_DB_PASSWORD: "${MYSQL_PASSWORD}"
+      WORDPRESS_DB_NAME: "${WORDPRESS_DB_NAME}"
+    networks:
+      - app-network
+
+volumes:
+  db_data:
+  wordpress_data:
+  nginx_ssl:
+    external: true
+  wpsite_certbot:
+    #    external: true
+
+networks:
+  app-network:
+    driver: bridge
