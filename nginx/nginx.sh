@@ -2,14 +2,23 @@
 
 set -e
 
-if [ -z "$DOMAIN" ]; then
-  echo "DOMAIN environment variable is not set"
+if [ -z "$DOMAINS" ]; then
+  echo "DOMAINS environment variable is not set"
   exit 1;
 fi
 
-use_lets_encrypt_certificates() {
-  echo "Switching Nginx to use Let's Encrypt certificate for $1"
-  sed -i "s|/etc/nginx/ssl/dummy/$1|/etc/letsencrypt/live/$1|g" /etc/nginx/conf.d/default.conf
+use_dummy_certificate() {
+  if grep -q "/etc/letsencrypt/live/$1" "/etc/nginx/sites/$1.conf"; then
+    echo "Switching Nginx to use dummy certificate for $1"
+    sed -i "s|/etc/letsencrypt/live/$1|/etc/nginx/sites/ssl/dummy/$1|g" "/etc/nginx/sites/$1.conf"
+  fi
+}
+
+use_lets_encrypt_certificate() {
+  if grep -q "/etc/nginx/sites/ssl/dummy/$1" "/etc/nginx/sites/$1.conf"; then
+    echo "Switching Nginx to use Let's Encrypt certificate for $1"
+    sed -i "s|/etc/nginx/sites/ssl/dummy/$1|/etc/letsencrypt/live/$1|g" "/etc/nginx/sites/$1.conf"
+  fi
 }
 
 reload_nginx() {
@@ -26,38 +35,60 @@ wait_for_lets_encrypt() {
   reload_nginx
 }
 
-if [[ "$DOMAIN" == "localhost" ]]; then
+domains_fixed=$(echo "$DOMAINS" | tr -d \")
+
+if [[ "$DOMAINS" == "localhost" ]]; then
+
   echo "Detected localhost.. skipping SSL."
-  envsubst '$${DOMAIN},$${COMPOSE_PROJECT_NAME}' < /etc/nginx/nossl.conf.template > /etc/nginx/conf.d/default.conf
+
+  for domain in $domains_fixed; do
+
+    echo "Creating configuration for http://$domain"
+
+    if [ ! -f "/etc/nginx/sites/$domain.conf" ]; then
+      echo "Creating Nginx configuration file /etc/nginx/sites/$domain.conf"
+      sed "s/\${domain}/$domain/g" /customization/nossl.conf.tpl > "/etc/nginx/sites/$domain.conf"
+    fi
+  done
+
   exec nginx -g 'daemon off;'  
   exit 0;
+
 else
+
   echo "Generating SSL certificates.."
 
-for domain in $DOMAIN; do
-  if [ ! -f "/etc/nginx/ssl/dummy/$domain/fullchain.pem" ]; then
-    echo "Generating dummy ceritificate for $domain"
-    mkdir -p "/etc/nginx/ssl/dummy/$domain"
-    printf "[dn]\nCN=${domain}\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:${domain}, DNS:www.${domain}\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth" > openssl.cnf
-    openssl req -x509 -out "/etc/nginx/ssl/dummy/$domain/fullchain.pem" -keyout "/etc/nginx/ssl/dummy/$domain/privkey.pem" \
-      -newkey rsa:2048 -nodes -sha256 \
-      -subj "/CN=${domain}" -extensions EXT -config openssl.cnf
-    rm -f openssl.cnf
+  if [ ! -f /etc/nginx/sites/ssl/ssl-dhparams.pem ]; then
+    openssl dhparam -out /etc/nginx/sites/ssl/ssl-dhparams.pem 2048
   fi
-done
 
-if [ ! -f /etc/nginx/ssl/ssl-dhparams.pem ]; then
-  openssl dhparam -out /etc/nginx/ssl/ssl-dhparams.pem 2048
-fi
+  for domain in $domains_fixed; do
 
-for domain in $DOMAIN; do
-  if [ ! -d "/etc/letsencrypt/live/$1" ]; then
-    wait_for_lets_encrypt "$domain" &
-  else
-    use_lets_encrypt_certificates "$domain"
-  fi
-done
-envsubst '$${DOMAIN},$${COMPOSE_PROJECT_NAME}' < /etc/nginx/default.conf.template > /etc/nginx/conf.d/default.conf
-exec nginx -g 'daemon off;'
+    echo "Creating configuration for https://$domain"
 
+    if [ ! -f "/etc/nginx/sites/$domain.conf" ]; then
+      echo "Creating Nginx configuration file /etc/nginx/sites/$domain.conf"
+      sed "s/\${domain}/$domain/g" /customization/site.conf.tpl > "/etc/nginx/sites/$domain.conf"
+    fi
+
+    if [ ! -f "/etc/nginx/sites/ssl/dummy/$domain/fullchain.pem" ]; then
+      echo "Generating dummy ceritificate for $domain"
+      mkdir -p "/etc/nginx/sites/ssl/dummy/$domain"
+      printf "[dn]\nCN=${domain}\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:$domain, DNS:www.$domain\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth" > openssl.cnf
+      openssl req -x509 -out "/etc/nginx/sites/ssl/dummy/$domain/fullchain.pem" -keyout "/etc/nginx/sites/ssl/dummy/$domain/privkey.pem" \
+        -newkey rsa:2048 -nodes -sha256 \
+        -subj "/CN=${domain}" -extensions EXT -config openssl.cnf
+      rm -f openssl.cnf
+    fi
+
+    if [ ! -d "/etc/letsencrypt/live/$domain" ]; then
+      use_dummy_certificate "$domain"
+      wait_for_lets_encrypt "$domain" &
+    else
+      use_lets_encrypt_certificates "$domain"
+    fi
+
+  done
+
+  exec nginx -g 'daemon off;'
 fi

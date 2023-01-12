@@ -1,4 +1,4 @@
-FROM certbot/certbot:arm64v8-v1.32.2
+FROM certbot/certbot:v1.32.2
 
 RUN apk add --no-cache bash
 

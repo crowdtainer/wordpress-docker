@@ -1,14 +1,12 @@
-server_names_hash_bucket_size 64;
-
 server {
     listen 80;
-    listen [::]:90;
+    listen [::]:80;
 
-    server_name ${DOMAIN};
+    server_name ${domain} www.${domain};
 
     location /.well-known/acme-challenge/ {
 	allow all;
-        root /var/www/certbot/${DOMAIN};
+        root /var/www/certbot/${domain};
     }
 
     location / {
@@ -20,21 +18,21 @@ server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
 
-    server_name  ${DOMAIN};
+    server_name ${domain} www.${domain};
 
     index index.php index.html index.htm;
-
-    root /var/www/html;
+    
+    root /var/www/html/${domain};
 
     server_tokens off;
 
-    ssl_certificate /etc/nginx/ssl/dummy/${DOMAIN}/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/dummy/${DOMAIN}/privkey.pem;
+    ssl_certificate /etc/nginx/sites/ssl/dummy/${domain}/fullchain.pem;
+    ssl_certificate_key /etc/nginx/sites/ssl/dummy/${domain}/privkey.pem;
 
-    include /etc/nginx/options-ssl-nginx.conf;
+    include /etc/nginx/includes/options-ssl-nginx.conf;
 
-    ssl_dhparam /etc/nginx/ssl/ssl-dhparams.pem; #TODO: leave? 
-    include /etc/nginx/hsts.conf; # TODO: leave?
+    ssl_dhparam /etc/nginx/sites/ssl/ssl-dhparams.pem; #TODO: leave? 
+    include /etc/nginx/includes/hsts.conf; # TODO: leave?
 
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-XSS-Protection "1; mode=block" always;
@@ -44,10 +42,6 @@ server {
     # add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
     # enable strict transport security only if you understand the implications
 
-  #location /.well-known/acme-challenge/{ TODO: required?
-  #    root /var/www/certbot/${DOMAIN};
-  #}
-   
     location / {
             try_files $uri $uri/ /index.php$is_args$args;
     }

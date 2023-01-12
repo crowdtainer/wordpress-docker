@@ -2,16 +2,15 @@ FROM nginx:1.23-alpine
 
 RUN apk add --no-cache openssl
 
-RUN mkdir -p /etc/nginx/templates
+COPY default.conf /etc/nginx/conf.d/
 
-COPY nossl.conf.template /etc/nginx/
-COPY default.conf.template /etc/nginx/
-
-COPY options-ssl-nginx.conf /etc/nginx/
-COPY hsts.conf /etc/nginx/
+COPY gzip.conf options-ssl-nginx.conf hsts.conf /etc/nginx/includes/
+COPY site.conf.tpl /customization/
 COPY nginx.sh /customization/
+COPY nossl.conf.tpl /customization/
 
 RUN chmod +x /customization/nginx.sh
+
 EXPOSE 80
 
 CMD ["/customization/nginx.sh"]
