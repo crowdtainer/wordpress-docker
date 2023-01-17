@@ -31,7 +31,7 @@ wait_for_lets_encrypt() {
     echo "Waiting for Let's Encrypt certificates for $1"
     sleep 5s & wait ${!}
   done
-  use_lets_encrypt_certificates "$1"
+  use_lets_encrypt_certificate "$1"
   reload_nginx
 }
 
@@ -85,7 +85,7 @@ else
       use_dummy_certificate "$domain"
       wait_for_lets_encrypt "$domain" &
     else
-      use_lets_encrypt_certificates "$domain"
+      use_lets_encrypt_certificate "$domain"
     fi
 
   done

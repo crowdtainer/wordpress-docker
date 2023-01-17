@@ -27,7 +27,7 @@ Now configure the Wordpress site by opening localhost in your browser, or using 
 
 
 ```sh
-docker-compose --env-file config.env run --rm wp-cli user list
+docker-compose --env-file config.env run --rm wp-cli core install --url=example.com --title=Example --admin_user=supervisor --admin_password=strongpassword --admin_email=info@example.com
 ```
 
 Once everything is as desired, you can use the "vackup.sh" script to save the volumes and reload it in your production server:
@@ -51,6 +51,12 @@ docker volume create --name=letsencrypt_certs
 ```
 
 Change the CERTBOT_TEST_CERT value to 0 in config.env.
+
+Usually it will be necessary to rename wordpress's hostname (localhost vs example.com). This can be done with the following command:
+
+```sh
+docker-compose --env-file config.env run --rm wp-cli search-replace "localhost" "example.de"
+```
 
 Start the containers:
 
