@@ -39,17 +39,14 @@ domains_fixed=$(echo "$DOMAINS" | tr -d \")
 
 if [[ "$DOMAINS" == "localhost" ]]; then
 
-  echo "Detected localhost.. skipping SSL."
+  echo "Detected localhost: skipping SSL and static sites.."
 
-  for domain in $domains_fixed; do
+  echo "Creating configuration for http://localhost"
 
-    echo "Creating configuration for http://$domain"
-
-    if [ ! -f "/etc/nginx/sites/$domain.conf" ]; then
-      echo "Creating Nginx configuration file /etc/nginx/sites/$domain.conf"
-      sed "s/\${domain}/$domain/g" /customization/nossl.conf.tpl > "/etc/nginx/sites/$domain.conf"
-    fi
-  done
+  if [ ! -f "/etc/nginx/sites/localhost.conf" ]; then
+    echo "Creating Nginx configuration file /etc/nginx/sites/localhost.conf"
+    sed "s/\${domain}/localhost/g" /customization/nossl.conf.tpl > "/etc/nginx/sites/localhost.conf"
+  fi
 
   exec nginx -g 'daemon off;'  
   exit 0;
@@ -62,13 +59,21 @@ else
     openssl dhparam -out /etc/nginx/sites/ssl/ssl-dhparams.pem 2048
   fi
 
+  firstDomain=true
   for domain in $domains_fixed; do
 
     echo "Creating configuration for https://$domain"
 
     if [ ! -f "/etc/nginx/sites/$domain.conf" ]; then
       echo "Creating Nginx configuration file /etc/nginx/sites/$domain.conf"
-      sed "s/\${domain}/$domain/g" /customization/site.conf.tpl > "/etc/nginx/sites/$domain.conf"
+      if [[ "$firstDomain" == true ]]; then
+	echo "Using site.conf.tpl for wordpress @ $domain.."
+        sed "s/\${domain}/$domain/g" /customization/site.conf.tpl > "/etc/nginx/sites/$domain.conf"
+	firstDomain=0
+      else
+	echo "Using static_site.conf.tpl for static site @ $domain.."
+        sed "s/\${domain}/$domain/g" /customization/static_site.conf.tpl > "/etc/nginx/sites/$domain.conf"
+      fi
     fi
 
     if [ ! -f "/etc/nginx/sites/ssl/dummy/$domain/fullchain.pem" ]; then

@@ -22,7 +22,6 @@ server {
 
     index index.php index.html index.htm;
     
-#    root /var/www/html/${domain};
     root /var/www/html;
 
     server_tokens off;
@@ -73,3 +72,4 @@ server {
     }
     
 }
+

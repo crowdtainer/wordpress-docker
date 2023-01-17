@@ -15,6 +15,8 @@ services:
     volumes:
       - nginx_conf:/etc/nginx/sites/ssl
       - wordpress_data:/var/www/html
+      - ./static_sites:/var/www/static_sites
+      - ./vhosts:/etc/nginx/vhosts
       - letsencrypt_certs:/etc/letsencrypt
       - certbot_acme_challenge:/var/www/certbot
     restart: unless-stopped 
@@ -28,7 +30,6 @@ services:
     container_name: certbot
     env_file: "./config.env"
     volumes:
-      #  - wordpress_data:/var/www/html
       - letsencrypt_certs:/etc/letsencrypt
       - certbot_acme_challenge:/var/www/certbot
     networks:

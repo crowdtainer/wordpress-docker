@@ -4,7 +4,13 @@ A docker compose configuration to quickly get a Wordpress instance and running, 
 
 This is for Crowdtainer's own use and to help others get up and running quickly with their projects.
 
-Credits: Inspired by <a href='https://github.com/evgeniy-khist/letsencrypt-docker-compose'> evgeniy-khist</a>
+Credits: Inspired by <a href='https://github.com/evgeniy-khist/letsencrypt-docker-compose'> evgeniy-khist</a>, with the following modifications:
+
+- By default, one installation of wordpress is included and expected to be present.
+- If the domain specified in the configuration file is 'localhost', SSL certificates and related setup is skipped. Wordpress can still run locally for development.
+- If the domain specified in the configuration file is anything other than 'localhost', the certificates are generated and the pages are served with SSL/TLS.
+- Opionally, one or more static sites can be hosted alongside wordpress. SSL certificates for these are generated as well.
+   - Note: Any served static sites won't be setup/served if domain is 'localhost'. Localhost setup only supports serving wordpress.
 
 ## Instructions
 Set the variables in config.env.example then rename it to config.env.

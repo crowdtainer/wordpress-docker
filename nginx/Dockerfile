@@ -5,9 +5,8 @@ RUN apk add --no-cache openssl
 COPY default.conf /etc/nginx/conf.d/
 
 COPY gzip.conf options-ssl-nginx.conf hsts.conf /etc/nginx/includes/
-COPY site.conf.tpl /customization/
+COPY site.conf.tpl nossl.conf.tpl static_site.conf.tpl /customization/
 COPY nginx.sh /customization/
-COPY nossl.conf.tpl /customization/
 
 RUN chmod +x /customization/nginx.sh
 

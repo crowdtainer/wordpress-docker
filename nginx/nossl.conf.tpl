@@ -4,9 +4,9 @@ server {
 
         server_name ${domain};
 
-        index index.php index.html index.htm;
+	root /var/www/html;
 
-        root /var/www/html;
+        index index.php index.html index.htm;
 
         location / {
                 try_files $uri $uri/ /index.php$is_args$args;
