@@ -6,8 +6,8 @@ services:
     build: ./nginx
     container_name: nginx
     ports:
-      - "80:80"
-      - "443:443"
+      - "8000:80"
+      - "4443:443"
     environment:
       COMPOSE_PROJECT_NAME: "${COMPOSE_PROJECT_NAME}"
       DOMAINS: "${DOMAINS}"
@@ -21,7 +21,7 @@ services:
       - certbot_acme_challenge:/var/www/certbot
     restart: unless-stopped 
     networks: 
-      - app-network
+      - wp-network
 
   certbot:
     depends_on:
@@ -33,7 +33,7 @@ services:
       - letsencrypt_certs:/etc/letsencrypt
       - certbot_acme_challenge:/var/www/certbot
     networks:
-      - app-network
+      - wp-network
 
   cron:
     build: ./cron
@@ -63,7 +63,7 @@ services:
       MYSQL_USER: "${MYSQL_USER}"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
     networks:
-      - app-network
+      - wp-network
 
   wordpress:
     depends_on:
@@ -81,7 +81,7 @@ services:
       WORDPRESS_DB_PASSWORD: "${MYSQL_PASSWORD}"
       WORDPRESS_DB_NAME: "${WORDPRESS_DB_NAME}"
     networks:
-      - app-network
+      - wp-network
 
   wp-cli:
     container_name: wp-cli
@@ -98,7 +98,7 @@ services:
     volumes:
       - wordpress_data:/var/www/html
     networks:
-      - app-network
+      - wp-network
 
 volumes:
   db_data:
@@ -110,5 +110,5 @@ volumes:
   certbot_acme_challenge:
 
 networks:
-  app-network:
+  wp-network:
     driver: bridge
