@@ -1,36 +1,20 @@
-# Wordpress + FPM, Nginx, and Let’s Encrypt
+# Caddy server + FPM + Wordpress
 
 A docker compose configuration to quickly get a Wordpress instance and running, to serve as a starting point for blogs, pages, or installation of WooCommerce and other e-commerce stores.
 
 This is for Crowdtainer's own use and to help others get up and running quickly with their projects.
 
-Credits: Inspired by <a href='https://github.com/evgeniy-khist/letsencrypt-docker-compose'> evgeniy-khist</a>, with the following modifications:
-
-- By default, one installation of wordpress is included and expected to be present.
-- If the domain specified in the configuration file is 'localhost', SSL certificates and related setup is skipped. Wordpress can still run locally for development.
-- If the domain specified in the configuration file is anything other than 'localhost', the certificates are generated and the pages are served with SSL/TLS.
-- Opionally, one or more static sites can be hosted alongside wordpress. SSL certificates for these are generated as well.
-   - Note: Any served static sites won't be setup/served if domain is 'localhost'. Localhost setup only supports serving wordpress.
-
-## Instructions
-Set the variables in config.env.example then rename it to config.env.
-
-Tip: For development, you can use the domain 'localhost' in your config.env, which will disable SSL/certificates.
-
 Create the required volumes and run docker:
 
 ```sh
-docker volume create --name=nginx_conf
-docker volume create --name=letsencrypt_certs
-
+docker volume create --name=caddy_data
 docker-compose --env-file config.env up --build
 
-#docker compose up -d --build
-#docker compose logs -f
+# To read logs:
+docker compose logs -f
 ```
 
 Now configure the Wordpress site by opening localhost in your browser, or using wp-cli tool, e.g.:
-
 
 ```sh
 docker-compose --env-file config.env run --rm wp-cli core install --url=example.com --title=Example --admin_user=supervisor --admin_password=strongpassword --admin_email=info@example.com
@@ -48,31 +32,16 @@ Once everything is as desired, you can use the "vackup.sh" script to save the vo
 
 ## Running in production:
 
-If necessary, re-create the volume for Let's Encrypt certificates:
-
-```sh
-# Destroy the cert bot container and volume
-docker volume rm letsencrypt_certs
-docker volume create --name=letsencrypt_certs
-```
-
-Change the CERTBOT_TEST_CERT value to 0 in config.env.
-
 Usually it will be necessary to rename wordpress's hostname (localhost vs example.com). This can be done with the following command:
 
 ```sh
 docker-compose --env-file config.env run --rm wp-cli search-replace "localhost" "example.de"
 ```
 
-Start the containers:
+Build and try:
 
 ```sh
 docker-compose --env-file config.env up --build
 # OR
 docker-compose up -d --env-file config.env
-```
-
-To do hot reload of nginx configuration:
-```sh
-docker compose exec --no-TTY nginx nginx -s reload
 ```

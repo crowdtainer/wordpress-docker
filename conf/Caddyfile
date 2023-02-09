@@ -1,0 +1,28 @@
+# Serving wordpress:
+shop.example.com {
+# Set this path to your site's directory:
+    root * /var/www/html
+
+    # Enable Gzip compression:
+    encode gzip
+
+    @forbidden {
+        not path /wp-includes/ms-files.php
+        path /wp-admin/includes/*.php
+        path /wp-includes/*.php
+    }
+    respond @forbidden "Access denied" 403
+
+    # Serve WordPress PHP files through php-fpm:
+    php_fastcgi wordpress:9000
+
+    # Enable the static file server:
+    file_server
+}
+
+# Serving a static site:
+
+static.example.com {
+    root * /var/www/static_sites/test.example.com
+    file_server
+}
