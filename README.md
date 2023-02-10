@@ -1,10 +1,22 @@
 # Caddy server + FPM + Wordpress
 
-A docker compose configuration to quickly get a Wordpress instance and running, to serve as a starting point for blogs, pages, or installation of WooCommerce and other e-commerce stores.
+A docker compose to quickly get a Wordpress instance up and running, to serve as a starting point for blogs, pages, or installation of WooCommerce and other e-commerce stores.
 
 This is for Crowdtainer's own use and to help others get up and running quickly with their projects.
 
-Create the required volumes and run docker:
+1- Setup env vars:
+```sh
+cp config.env.example config.env
+# Edit config.env accordingly
+```
+
+2- Add or delete any static sites you would like to serve in the /static_sites folder.
+
+3- Edit conf/Caddyfile accordingly following the examples.
+
+4- Make sure your server is reachable by respectively declared domains.
+
+5- Create the required volumes and run docker:
 
 ```sh
 docker volume create --name=caddy_data
@@ -14,13 +26,13 @@ docker-compose --env-file config.env up --build
 docker compose logs -f
 ```
 
-Now configure the Wordpress site by opening localhost in your browser, or using wp-cli tool, e.g.:
+Now configure the Wordpress site by opening the page in your browser, or using wp-cli tool, e.g.:
 
 ```sh
 docker-compose --env-file config.env run --rm wp-cli core install --url=example.com --title=Example --admin_user=supervisor --admin_password=strongpassword --admin_email=info@example.com
 ```
 
-Once everything is as desired, you can use the "vackup.sh" script to save the volumes and reload it in your production server:
+Once everything is as desired, you can use the "vackup.sh" script to save the volumes and reload it somewhere else:
 
 ```sh
 # source machine:
@@ -36,12 +48,4 @@ Usually it will be necessary to rename wordpress's hostname (localhost vs exampl
 
 ```sh
 docker-compose --env-file config.env run --rm wp-cli search-replace "localhost" "example.de"
-```
-
-Build and try:
-
-```sh
-docker-compose --env-file config.env up --build
-# OR
-docker-compose up -d --env-file config.env
 ```
