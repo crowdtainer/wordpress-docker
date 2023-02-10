@@ -1,65 +1,38 @@
 version: "1"
 services:
-  nginx:
+
+  caddy:
     depends_on:
-      - wordpress 
-    build: ./nginx
-    container_name: nginx
+      - wordpress
+    # build: ./caddy_customization
+    image: caddy:2.6.3-alpine
+    container_name: caddyserver
     ports:
-      - "8000:80"
-      - "4443:443"
-    environment:
-      COMPOSE_PROJECT_NAME: "${COMPOSE_PROJECT_NAME}"
-      DOMAINS: "${DOMAINS}"
-    env_file: "./config.env"
+      - 8000:80
+      - 4443:443
     volumes:
-      - nginx_conf:/etc/nginx/sites/ssl
       - wordpress_data:/var/www/html
       - ./static_sites:/var/www/static_sites
-      - ./vhosts:/etc/nginx/vhosts
-      - letsencrypt_certs:/etc/letsencrypt
-      - certbot_acme_challenge:/var/www/certbot
-    restart: unless-stopped 
-    networks: 
-      - wp-network
-
-  certbot:
-    depends_on:
-      - nginx
-    build: ./certbot
-    container_name: certbot
-    env_file: "./config.env"
-    volumes:
-      - letsencrypt_certs:/etc/letsencrypt
-      - certbot_acme_challenge:/var/www/certbot
+      - $PWD/conf/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
     networks:
       - wp-network
-
-  cron:
-    build: ./cron
-    container_name: cron
-    environment:
-      COMPOSE_PROJECT_NAME: "${COMPOSE_PROJECT_NAME}"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./:/workdir:ro
-    depends_on:
-      - nginx
-      - certbot
-    restart: unless-stopped
 
   db:
     env_file: 
       - ./config.env
     container_name: db
-    image: mariadb:10.4
+    image: mariadb:10.6.4-focal
+    # expose:
+    #   - 3306
     volumes:
       - db_data:/var/lib/mysql
-        #    command: '--default-authentication-plugin=mysql_native_password' // For mysql only
+    command: '--default-authentication-plugin=mysql_native_password'
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}" 
-      MYSQL_DATABASE: "${MYSQL_DATABASE}"
+      MYSQL_DATABASE: "${WORDPRESS_DB_NAME}"
       MYSQL_USER: "${MYSQL_USER}"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
     networks:
@@ -70,13 +43,14 @@ services:
       - db
     env_file:
       - config.env
-    build: ./customization
+    build: ./wp_customization
     container_name: wordpress
     volumes:
       - wordpress_data:/var/www/html
+      - "./conf/php.ini:$PHP_INI_DIR/conf.d/custom.ini"
     restart: unless-stopped
     environment:
-      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_HOST: db
       WORDPRESS_DB_USER: "${MYSQL_USER}"
       WORDPRESS_DB_PASSWORD: "${MYSQL_PASSWORD}"
       WORDPRESS_DB_NAME: "${WORDPRESS_DB_NAME}"
@@ -85,29 +59,27 @@ services:
 
   wp-cli:
     container_name: wp-cli
+    image: wordpress:cli
     depends_on:
       - wordpress
     env_file:
       - config.env
     environment:
-      WORDPRESS_DB_HOST: db:3306
-      WORDPRESS_DB_USER: "${MYSQL_USER}"
-      WORDPRESS_DB_PASSWORD: "${MYSQL_PASSWORD}"
-      WORDPRESS_DB_NAME: "${WORDPRESS_DB_NAME}"
-    image: wordpress:cli
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: ${MYSQL_USER}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
     volumes:
       - wordpress_data:/var/www/html
     networks:
       - wp-network
 
 volumes:
+  caddy_data:
+    external: true
+  caddy_config:
   db_data:
   wordpress_data:
-  nginx_conf:
-    external: true
-  letsencrypt_certs:
-    external: true
-  certbot_acme_challenge:
 
 networks:
   wp-network:
