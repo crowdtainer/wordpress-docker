@@ -1,4 +1,5 @@
-version: "1"
+version: '3.7'
+
 services:
 
   caddy:
@@ -13,11 +14,12 @@ services:
     volumes:
       - wordpress_data:/var/www/html
       - ./static_sites:/var/www/static_sites
-      - $PWD/conf/Caddyfile:/etc/caddy/Caddyfile
+      - ./conf/Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
     networks:
       - wp-network
+      - crowdtainer-webapp-network
 
   db:
     env_file: 
@@ -36,7 +38,7 @@ services:
       MYSQL_USER: "${MYSQL_USER}"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
     networks:
-      - wp-network
+      - wp-db-network
 
   wordpress:
     depends_on:
@@ -55,6 +57,7 @@ services:
       WORDPRESS_DB_PASSWORD: "${MYSQL_PASSWORD}"
       WORDPRESS_DB_NAME: "${WORDPRESS_DB_NAME}"
     networks:
+      - wp-db-network
       - wp-network
 
   wp-cli:
@@ -82,5 +85,10 @@ volumes:
   wordpress_data:
 
 networks:
+  wp-db-network:
+    driver: bridge
   wp-network:
+    driver: bridge
+  crowdtainer-webapp-network:
+    name: crowdtainerNetwork
     driver: bridge

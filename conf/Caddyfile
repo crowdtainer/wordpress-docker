@@ -1,10 +1,14 @@
-# Serving wordpress:
+# Example configuration
+
+# Serving wordpress site from docker-compose.yml:
 shop.example.com {
-# Set this path to your site's directory:
+    # replace with 'tls internal' for local testing/development
+    tls support@example.com
+
     root * /var/www/html
 
     # Enable Gzip compression:
-    encode gzip
+    encode zstd gzip
 
     @forbidden {
         not path /wp-includes/ms-files.php
@@ -20,9 +24,25 @@ shop.example.com {
     file_server
 }
 
-# Serving a static site:
+# Static site
+example.com {
+    # replace with 'tls internal' for local testing/development
+    tls support@example.com
 
-static.example.com {
-    root * /var/www/static_sites/test.example.com
+    encode zstd gzip
+    root * /var/www/static_sites/example.com
     file_server
+}
+
+# Reverse proxy to node server; i.e., Crowdtainer app (https://github.com/crowdtainer/dapp-web)
+crowdtainer.yourdomain.com {
+    # replace with 'tls internal' for local testing/development
+    tls support@example.com
+
+    encode zstd gzip
+
+    # crowdtainerServer is Crowdtainer's docker compose host name.
+    # So if docker compose is brought up in the same machine for both projects,
+    # the host is already correct as below; Otherwise change the the DNS/IP here:
+    reverse_proxy crowdtainerServer:3000
 }
