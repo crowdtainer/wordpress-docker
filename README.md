@@ -12,9 +12,9 @@ cp config.env.example config.env
 
 2- Add or delete any static sites you would like to serve in the /static_sites folder.
 
-3- Edit conf/Caddyfile accordingly following the examples.
+3- Edit conf/Caddyfile accordingly following the provided Caddy example file.
 
-4- Make sure your server is reachable by respectively declared domains.
+4- Make sure your server is reachable by respectively declared DNS/domains.
 
 5- Create the required volumes and run docker:
 
@@ -47,5 +47,5 @@ Once everything is as desired, you can use the "vackup.sh" script to save the vo
 Usually it will be necessary to rename wordpress's hostname (localhost vs example.com). This can be done with the following command:
 
 ```sh
-docker-compose --env-file config.env run --rm wp-cli search-replace "localhost" "example.de"
+docker-compose --env-file config.env run --rm wp-cli search-replace "localhost" "shop.example.com"
 ```
