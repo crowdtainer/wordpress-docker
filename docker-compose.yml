@@ -75,7 +75,7 @@ services:
     volumes:
       - wordpress_data:/var/www/html
     networks:
-      - wp-network
+      - wp-db-network
 
 volumes:
   caddy_data:
