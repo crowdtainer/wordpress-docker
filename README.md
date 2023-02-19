@@ -49,3 +49,8 @@ Usually it will be necessary to rename wordpress's hostname (localhost vs exampl
 ```sh
 docker-compose --env-file config.env run --rm wp-cli search-replace "localhost" "shop.example.com"
 ```
+
+To backup wordpress database to a file:
+```sh
+docker compose --env-file config.env run --rm wp-cli db export - > demo_wp-2023-02-19-2.sql
+```
